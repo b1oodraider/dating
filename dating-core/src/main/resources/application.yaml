@@ -1,3 +1,31 @@
 spring:
   application:
     name: dating-core
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dating}
+    username: ${DB_USER:dating}
+    password: ${DB_PASSWORD:dating}
+  jpa:
+    hibernate:
+      ddl-auto: validate          # схему создаёт Liquibase, Hibernate только сверяет
+    open-in-view: false           # отключаем антипаттерн OSIV (объясню ниже)
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  # Наши настройки JWT (читаются в JwtService через @Value)
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}
+    access-ttl-minutes: 15
+    refresh-ttl-days: 30
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  port: 8081

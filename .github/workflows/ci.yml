@@ -1,0 +1,82 @@
+# CI-пайплайн для dating-core (GitHub Actions).
+# Лежит в КОРНЕ репозитория: .github/workflows/ci.yml
+# Срабатывает на каждый push в master и на каждый pull request в master.
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# Если в ту же ветку/PR прилетел новый коммит — отменяем предыдущий запуск,
+# чтобы не гонять устаревшую сборку и не жечь минуты.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Принцип наименьших привилегий: по умолчанию только чтение репозитория.
+permissions:
+  contents: read
+
+jobs:
+  # ---------- Джоба 1: сборка + тесты ----------
+  build-test:
+    name: Build & Test (JDK 25)
+    runs-on: ubuntu-latest              # GitHub-раннер; в нём УЖЕ есть Docker (нужно Testcontainers)
+    defaults:
+      run:
+        working-directory: dating-core  # Maven-проект лежит в подпапке репо
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven                  # кешируем ~/.m2 между запусками → сборка быстрее
+
+      - name: Build and run tests
+        run: |
+          chmod +x mvnw                 # на Windows исполняемый бит часто теряется — выставляем
+          ./mvnw -B -ntp verify         # компиляция + все тесты (вкл. Testcontainers) + упаковка jar
+
+      - name: Upload test reports
+        if: always()                    # выкладываем отчёты, даже если тесты упали
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: dating-core/target/surefire-reports/
+          if-no-files-found: ignore
+
+  # ---------- Джоба 2: сборка и публикация Docker-образа (CD-lite) ----------
+  # Идёт только после зелёной build-test и только на push в master (не на PR).
+  docker-image:
+    name: Build & push image (ghcr.io)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write                   # право пушить образ в GitHub Container Registry
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # выдаётся автоматически, свой секрет не нужен
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: dating-core          # тут лежат Dockerfile, pom.xml, src
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}

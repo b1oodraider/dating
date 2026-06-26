@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: dating
+      POSTGRES_USER: dating
+      POSTGRES_PASSWORD: dating
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dating"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres        # имя сервиса = хост внутри compose-сети
+      DB_PORT: 5432
+      DB_NAME: dating
+      DB_USER: dating
+      DB_PASSWORD: dating
+      JWT_SECRET: change-me-in-prod-use-at-least-32-bytes-secret-key
+    ports:
+      - "8081:8081"
+
+volumes:
+  pgdata:
