@@ -105,7 +105,7 @@ public class AuthService {
     }
 
     private LoginResponse issueTokens(User user) {
-        String access = jwtService.createAccessToken(user);
+        String access = jwtService.createAccessToken(user.getId(), user.getRole().name());
         String refresh = UUID.randomUUID().toString();
 
         refreshTokenRepository.save(new RefreshToken(user.getId(),

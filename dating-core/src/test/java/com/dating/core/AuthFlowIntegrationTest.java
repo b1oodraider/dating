@@ -35,14 +35,14 @@ class AuthFlowIntegrationTest {
     void register_login_accessProtected_flow() throws Exception {
         var register = Map.of("email", "a@mail.ru", "password", "password123",
                 "displayName", "Аня");
-        mockMvc.perform(post("api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(register)))
                 .andExpect(status().isCreated());
 
 
         var login = Map.of("email", "a@mail.ru", "password", "password123");
-        String body = mockMvc.perform(post("api/auth/login")
+        String body = mockMvc.perform(post("/api/auth/login")
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .content(objectMapper.writeValueAsString(login)))
                                 .andExpect(status().isOk())

@@ -37,14 +37,16 @@ public class JWTService {
     /**
      * Выпускает access-токен для пользователя.
      *
-     * @param user пользователь, чьи id и роль кладутся в claims
+     * @param userId - id пользователя
+     * @param role - роль пользователя
+     * данные кладутся в claim
      * @return подписанный JWT
      */
-    public String createAccessToken(User user) {
+    public String createAccessToken(UUID userId, String role) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(user.getId().toString())
-                .claim("role", user.getRole().name())
+                .subject(userId.toString())
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expiration)))
                 .signWith(secretKey)
