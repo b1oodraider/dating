@@ -7,16 +7,26 @@ spring:
     password: ${DB_PASSWORD:dating}
   jpa:
     hibernate:
-      ddl-auto: validate          # схему создаёт Liquibase, Hibernate только сверяет
-    open-in-view: false           # отключаем антипаттерн OSIV (объясню ниже)
+      ddl-auto: validate
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
-  # Наши настройки JWT (читаются в JwtService через @Value)
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: true
+
 app:
   jwt:
     secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}

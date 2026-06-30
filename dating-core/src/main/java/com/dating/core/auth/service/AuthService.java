@@ -3,6 +3,7 @@ package com.dating.core.auth.service;
 import com.dating.core.auth.api.dto.LoginRequest;
 import com.dating.core.auth.api.dto.LoginResponse;
 import com.dating.core.auth.api.dto.RegisterRequest;
+import com.dating.core.auth.api.events.UserRegistered;
 import com.dating.core.auth.domain.RefreshToken;
 import com.dating.core.auth.domain.User;
 import com.dating.core.auth.repo.RefreshTokenRepository;
@@ -10,6 +11,7 @@ import com.dating.core.auth.repo.UserRepository;
 import com.dating.core.common.config.JWTProperties;
 import com.dating.core.common.security.JWTService;
 import com.dating.core.profile.service.ProfileCreator;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,13 +38,17 @@ public class AuthService {
     private final ProfileCreator profileCreator;
     private final Duration refreshTtl;
 
-    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder, JWTService jwtService, ProfileCreator profileCreator, JWTProperties jwtProperties) {
+    private final ApplicationEventPublisher events;
+
+
+    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder, JWTService jwtService, ProfileCreator profileCreator, JWTProperties jwtProperties, ApplicationEventPublisher events) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.profileCreator = profileCreator;
         this.refreshTtl = Duration.ofDays(jwtProperties.refreshTtlDays());
+        this.events = events;
     }
 
     /**
@@ -57,8 +63,9 @@ public class AuthService {
         }
         String hashedPassword = passwordEncoder.encode(request.password());
         User user = userRepository.save(new User(request.email(), hashedPassword));
-
         profileCreator.createInitialProfile(user.getId(), request.displayName());
+
+        events.publishEvent(new UserRegistered(user.getId(), request.email(), request.displayName(), UUID.randomUUID(), Instant.now()));
     }
 
 

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -27,12 +28,13 @@ class AuthServiceTest {
     @Mock PasswordEncoder passwordEncoder;
     @Mock JWTService jwtService;
     @Mock ProfileCreator profileCreator;
+    @Mock ApplicationEventPublisher events;
 
     AuthService authService;
 
     private AuthService service() {
         var props = new JWTProperties("test-secret-at-least-32-bytes-long-xx", 15, 30);
-        return new AuthService(userRepository, refreshTokenRepository, passwordEncoder, jwtService, profileCreator, props);
+        return new AuthService(userRepository, refreshTokenRepository, passwordEncoder, jwtService, profileCreator, props, events);
     }
 
     @Test
