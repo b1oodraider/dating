@@ -1,0 +1,39 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: coreRoute
+              uri: ${CORE_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter:
+                      replenishRate: 10
+                      burstCapacity: 20
+                      requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+  data:
+    redis:
+      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST:localhost}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - gateway
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}
