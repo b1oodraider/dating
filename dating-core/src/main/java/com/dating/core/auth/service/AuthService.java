@@ -12,6 +12,7 @@ import com.dating.core.common.config.JWTProperties;
 import com.dating.core.common.security.JWTService;
 import com.dating.core.profile.service.ProfileCreator;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -62,7 +63,14 @@ public class AuthService {
             throw new IllegalStateException("Email already in use");
         }
         String hashedPassword = passwordEncoder.encode(request.password());
-        User user = userRepository.save(new User(request.email(), hashedPassword));
+        User user;
+        try {
+            // saveAndFlush, а не save: INSERT уходит в БД сейчас, и нарушение unique(email)
+            // при гонке двух регистраций ловится здесь, а не на commit после выхода из метода
+            user = userRepository.saveAndFlush(new User(request.email(), hashedPassword));
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("Email already in use", e);
+        }
         profileCreator.createInitialProfile(user.getId(), request.displayName());
 
         events.publishEvent(new UserRegistered(user.getId(), request.email(), request.displayName(), UUID.randomUUID(), Instant.now()));
@@ -87,6 +95,9 @@ public class AuthService {
     /**
      * Обменивает действующий refresh-токен на новую пару (с ротацией).
      *
+     * <p>Reuse-detection: предъявление уже отозванного токена означает, что
+     * токен использовали дважды (клиент + вор) — отзываем все сессии пользователя.
+     *
      * @throws BadCredentialsException если токен неизвестен или недействителен
      */
     @Transactional
@@ -94,6 +105,11 @@ public class AuthService {
         String hash = sha256(refreshToken);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
+        if(stored.isRevoked()) {
+            refreshTokenRepository.findAllByUserIdAndRevokedFalse(stored.getUserId())
+                    .forEach(RefreshToken::revoke);
+            throw new BadCredentialsException("Refresh token is inactive or revoked");
+        }
         if(!stored.isActive()) {
             throw new BadCredentialsException("Refresh token is inactive or revoked");
         }

@@ -1,4 +1,4 @@
-# CI-пайплайн для dating-core (GitHub Actions).
+# CI-пайплайн для всех модулей репозитория (GitHub Actions).
 # Лежит в КОРНЕ репозитория: .github/workflows/ci.yml
 # Срабатывает на каждый push в master и на каждый pull request в master.
 name: CI
@@ -20,13 +20,14 @@ permissions:
   contents: read
 
 jobs:
-  # ---------- Джоба 1: сборка + тесты ----------
+  # ---------- Джоба 1: сборка + тесты (каждый модуль — отдельный запуск матрицы) ----------
   build-test:
-    name: Build & Test (JDK 25)
+    name: Build & Test ${{ matrix.module }} (JDK 25)
     runs-on: ubuntu-latest              # GitHub-раннер; в нём УЖЕ есть Docker (нужно Testcontainers)
-    defaults:
-      run:
-        working-directory: dating-core  # Maven-проект лежит в подпапке репо
+    strategy:
+      fail-fast: false                  # падение одного модуля не отменяет сборку второго
+      matrix:
+        module: [ dating-core, api-gateway ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +40,7 @@ jobs:
           cache: maven                  # кешируем ~/.m2 между запусками → сборка быстрее
 
       - name: Build and run tests
+        working-directory: ${{ matrix.module }}
         run: |
           chmod +x mvnw                 # на Windows исполняемый бит часто теряется — выставляем
           ./mvnw -B -ntp verify         # компиляция + все тесты (вкл. Testcontainers) + упаковка jar
@@ -47,17 +49,22 @@ jobs:
         if: always()                    # выкладываем отчёты, даже если тесты упали
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: dating-core/target/surefire-reports/
+          name: test-reports-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/surefire-reports/
           if-no-files-found: ignore
 
-  # ---------- Джоба 2: сборка и публикация Docker-образа (CD-lite) ----------
+  # ---------- Джоба 2: сборка и публикация Docker-образов (CD-lite) ----------
   # Идёт только после зелёной build-test и только на push в master (не на PR).
+  # Имя образа включает модуль (ghcr.io/<repo>/<module>), иначе образы
+  # dating-core и api-gateway перезаписывали бы друг друга под одним тегом.
   docker-image:
-    name: Build & push image (ghcr.io)
+    name: Build & push ${{ matrix.module }} image (ghcr.io)
     needs: build-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ dating-core, api-gateway ]
     permissions:
       contents: read
       packages: write                   # право пушить образ в GitHub Container Registry
@@ -75,8 +82,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: dating-core          # тут лежат Dockerfile, pom.xml, src
+          context: ${{ matrix.module }} # тут лежат Dockerfile, pom.xml, src
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/${{ matrix.module }}:latest
+            ghcr.io/${{ github.repository }}/${{ matrix.module }}:${{ github.sha }}

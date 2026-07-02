@@ -46,18 +46,20 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         if(header != null && header.startsWith(PREFIX)) {
             String token = header.substring(PREFIX.length());
 
-            if(jwtService.isValid(token)) {
-                UUID userid = jwtService.extractUserId(token);
-                String role = jwtService.extractRole(token);
+            // parseClaims — единственная проверка подписи; subject и role
+            // достаём из уже распарсенных claims, не парся токен повторно
+            jwtService.parseClaims(token).ifPresent(claims -> {
+                UUID userId = UUID.fromString(claims.getSubject());
+                String role = claims.get("role", String.class);
 
                 var authority = new SimpleGrantedAuthority("ROLE_" + role);
-                var principal = new AuthPrincipal(userid, role);
+                var principal = new AuthPrincipal(userId, role);
 
                 var authentication = new UsernamePasswordAuthenticationToken(principal,
                         null, List.of(authority));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+            });
         }
         chain.doFilter(request, response);
     }
