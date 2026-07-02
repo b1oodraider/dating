@@ -89,6 +89,13 @@
 			<version>3.13.2</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- Автоконфигурация WebTestClient для @SpringBootTest (в Boot 4 — отдельный модуль).
+		     Версию не указываем: ею управляет parent (spring-boot-starter-parent). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

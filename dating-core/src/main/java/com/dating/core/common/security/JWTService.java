@@ -1,7 +1,6 @@
 package com.dating.core.common.security;
 
 
-import com.dating.core.auth.domain.User;
 import com.dating.core.common.config.JWTProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -14,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -49,33 +49,25 @@ public class JWTService {
                 .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expiration)))
-                .signWith(secretKey)
+                // алгоритм фиксируем явно: без него jjwt выбирает HMAC по длине ключа
+                // (ключ >= 48 байт даст HS384), а gateway проверяет строго HS256
+                .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
     }
 
     /**
-     * Проверяет подпись и срок действия токена.
+     * Проверяет подпись и срок действия токена и возвращает его claims.
+     * Один вызов = одна проверка подписи; всё содержимое (subject, role)
+     * дальше достаётся из возвращённых claims без повторного парсинга.
      *
-     * @return {@code true}, если токен валиден
+     * @return claims валидного токена, {@link Optional#empty()} — если токен невалиден
      */
-    public boolean isValid(String token) {
-        try{
-            parse(token);
-            return true;
+    public Optional<Claims> parseClaims(String token) {
+        try {
+            return Optional.of(parse(token));
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return Optional.empty();
         }
-    }
-
-    /** Извлекает id пользователя (subject) из валидного токена. */
-    public UUID extractUserId(String token) {
-        return UUID.fromString(parse(token).getSubject());
-    }
-
-    /** Извлекает роль из валидного токена. */
-    public String extractRole(String token) {
-        return parse(token).get("role", String.class);
-
     }
 
     private Claims parse(String token) {
