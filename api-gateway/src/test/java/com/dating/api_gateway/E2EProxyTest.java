@@ -1,6 +1,7 @@
 package com.dating.api_gateway;
 
 import com.dating.api_gateway.support.GatewayIntegrationTest;
+import com.github.tomakehurst.wiremock.http.Fault;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -68,27 +69,29 @@ class E2EProxyTest extends GatewayIntegrationTest {
         verify(getRequestedFor(urlEqualTo("/api/profiles/me")));
     }
 
-    /**
-     * Gateway пробрасывает статус ошибки upstream как есть.
-     *
-     * ВАЖНО: circuit breaker на роут сейчас НЕ навешен (в application.yaml только фильтр
-     * RequestRateLimiter, фильтра CircuitBreaker нет, resilience4j не сконфигурен). Поэтому
-     * 5xx от core просто пробрасывается клиенту. Полноценный CB-тест появится, когда навесишь
-     * фильтр CircuitBreaker — это уместнее в контексте resilience4j (день 5+).
-     */
     @Test
-    void upstreamError_isPropagated() {
+    void upstreamError_returnsFallback() {
         stubFor(get(urlEqualTo("/api/profiles/me"))
-                .willReturn(aResponse().withStatus(503)));
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
         webClient.get().uri("/api/profiles/me")
                 .header("Authorization", bearer())
                 .exchange()
-                // ровно 503: проверяем «пробрасывает как есть», а не «какая-то 5xx».
-                // Если появится фильтр CircuitBreaker с fallback'ом — тест честно упадёт
-                // и напомнит переписать его под новое поведение.
-                .expectStatus().isEqualTo(503);
+                .expectStatus().isEqualTo(503)
+                .expectBody().jsonPath("$.error").isEqualTo("Service unavailable");
+        verify(moreThanOrExactly(1), getRequestedFor(urlEqualTo("/api/profiles/me")));
+    }
 
-        verify(getRequestedFor(urlEqualTo("/api/profiles/me")));
+    @Test
+    void upstreamTimeout_returnsFallback() {
+        stubFor(get(urlEqualTo("/api/profiles/me"))
+                .willReturn(aResponse().withFixedDelay(1200)));
+
+        webClient.get().uri("/api/profiles/me")
+                .header("Authorization", bearer())
+                .exchange()
+                .expectStatus().isEqualTo(503)
+                .expectBody().jsonPath("$.error").isEqualTo("Service unavailable");
+        verify(moreThanOrExactly(1), getRequestedFor(urlEqualTo("/api/profiles/me")));
     }
 }
