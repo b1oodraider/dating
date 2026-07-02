@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
-                        .pathMatchers("/api/auth/**", "/actuator/health").permitAll()
+                        .pathMatchers("/api/auth/**", "/actuator/health", "/fallback/**").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(o-> o.jwt(Customizer.withDefaults()))
                 .build();
@@ -29,7 +29,6 @@ public class SecurityConfig {
     @Bean
     public ReactiveJwtDecoder jwtDecoder(@Value("${app.jwt.secret}") String secret) {
         var key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        // HS256 явно: должен совпадать с алгоритмом подписи в JWTService (dating-core)
         return NimbusReactiveJwtDecoder.withSecretKey(key)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();

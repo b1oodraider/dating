@@ -21,10 +21,31 @@ spring:
                       burstCapacity: 20
                       requestedTokens: 1
                     key-resolver: "#{@userKeyResolver}"
+                - name: CircuitBreaker
+                  args:
+                    name: coreCircuitBreaker
+                    fallbackUri: forward:/fallback/core
+
   data:
     redis:
       port: ${REDIS_PORT:6379}
       host: ${REDIS_HOST:localhost}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      coreCircuitBreaker:
+        failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 500ms
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: 60s
+  timelimiter:
+    instances:
+      coreCircuitBreaker:
+        timeoutDuration: 1s
 
 management:
   endpoints:
