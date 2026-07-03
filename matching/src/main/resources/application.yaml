@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: matching
+  grpc:
+    client:
+      channel:
+        profile:
+          target: static://localhost:9090
+
+server:
+  port: 8083
