@@ -10,6 +10,7 @@ import com.dating.core.profile.repo.ProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -38,6 +39,12 @@ public class ProfileService {
         return toResponse(profile);
     }
 
+    /** Возвращает набор профилей по набору id (в данный момент нужен для связи с сервисом matches по gRPC)*/
+    @Transactional(readOnly = true)
+    public List<ProfileResponse> getProfilesBatch(List<UUID> profileIds) {
+        return profileRepository.findAllById(profileIds).stream().map(this::toResponse).toList();
+    }
+
     /** Обновляет анкету текущего пользователя. */
     @Transactional
     public ProfileResponse update(UUID userId, UpdateProfileRequest request) {
@@ -49,6 +56,8 @@ public class ProfileService {
                                         request.city()));
         return toResponse(profileRepository.save(profile));
     }
+
+
 
     private Profile findByUserId(UUID userId) {
         return profileRepository.findByUserId(userId)
