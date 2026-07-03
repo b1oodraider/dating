@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.7</version>
+		<version>4.1.0</version>
 		<relativePath/>
 	</parent>
 
@@ -60,6 +60,13 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- gRPC-сервер (Boot 4.1: нативная автоконфигурация, Netty, порт 9090).
+		     profile выставляет GetProfile/GetProfilesBatch для matching-сервиса. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-grpc-server</artifactId>
 		</dependency>
 
 		<!-- Spring Modulith: ядро + JPA-интеграция -->
@@ -205,6 +212,13 @@
 
 	<build>
 		<plugins>
+			<!-- Кодогенерация из src/main/proto. Версия protoc и goal generate
+			     сконфигурированы через spring-boot-starter-parent — руками не пиним. -->
+			<plugin>
+				<groupId>io.github.ascopes</groupId>
+				<artifactId>protobuf-maven-plugin</artifactId>
+			</plugin>
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

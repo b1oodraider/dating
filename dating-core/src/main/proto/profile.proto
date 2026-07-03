@@ -1,0 +1,32 @@
+syntax="proto3";
+
+package dating.profile.v1;
+
+option java_package = "com.dating.core.profile.grpc.proto";
+option java_multiple_files=true;
+
+service ProfileService {
+  rpc GetProfile(GetProfileRequest) returns (ProfileMessage) ;
+  rpc GetProfilesBatch(GetProfilesBatchRequest) returns (GetProfilesBatchResponse);
+}
+
+message GetProfileRequest {
+  string id = 1;
+}
+
+message ProfileMessage {
+  string id = 1;
+  string user_id = 2;
+  string display_name = 3;
+  string birth_date = 4;
+  string gender = 5;
+  string city = 6;
+  string bio = 7;
+}
+message GetProfilesBatchRequest {
+  repeated string ids = 1;
+}
+
+message GetProfilesBatchResponse {
+  repeated ProfileMessage profiles = 1;
+}
