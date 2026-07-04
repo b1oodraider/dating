@@ -21,6 +21,10 @@ public class RecommendationController {
         this.recommendationService = recommendationService;
     }
 
+    // TODO(security): сервис ничем не защищён и не стоит за gateway — любой может запросить
+    //  рекомендации для чужого userId. Минимум: маршрут в gateway + userId из JWT, а не из параметра.
+    // TODO: валидация topK (отрицательное/огромное значение сейчас проходит молча;
+    //  limit(-1) кинет IllegalArgumentException -> 500).
     @GetMapping("/recommendations")
     public Mono<List<RecommendationDTO>> recommendations(@RequestParam UUID userId,
                                                          @RequestParam(defaultValue = "10") int topK) {

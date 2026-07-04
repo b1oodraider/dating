@@ -35,6 +35,8 @@ public class ProfileGrpcAdapter extends ProfileServiceGrpc.ProfileServiceImplBas
         }
     }
 
+    // TODO: нет лимита на размер батча — клиент может прислать 100к id, и это уедет
+    //  одним IN-запросом в БД. Ограничить (например, 100) и отвечать INVALID_ARGUMENT при превышении.
     @Override
     public void getProfilesBatch(GetProfilesBatchRequest request,
                                  StreamObserver<GetProfilesBatchResponse> responseObserver) {

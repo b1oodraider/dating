@@ -30,6 +30,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+// TODO: gRPC-сервер поднимается на фиксированном порту 9090 — тест упадёт, если порт занят
+//  (например, локально запущен core). Правильно: spring.grpc.server.port=0 в @SpringBootTest
+//  properties + @LocalGrpcPort в поле (аналогично RANDOM_PORT для HTTP).
+// TODO: контейнера Kafka здесь нет, контекст стартует только потому, что kafka-клиент
+//  подключается лениво, а тесты не публикуют событий. Хрупко: любой тест с регистрацией
+//  пользователя это сломает. Либо добавить KafkaContainer, как в AuthFlowIntegrationTest,
+//  либо знать про это ограничение.
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Testcontainers
 public class GrpcIntegrationTest {

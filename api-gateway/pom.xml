@@ -5,6 +5,9 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
+		<!-- TODO: dating-core и matching уже на Boot 4.1.0, этот модуль на 4.0.7.
+		     Перед бампом проверить совместимость Spring Cloud (release train)
+		     с Boot 4.1 — gateway зависит от spring-cloud-dependencies. -->
 		<version>4.0.7</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>

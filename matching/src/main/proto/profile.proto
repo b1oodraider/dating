@@ -1,3 +1,7 @@
+// TODO: это КОПИЯ dating-core/src/main/proto/profile.proto — два файла разъедутся молча,
+//  и matching начнёт видеть пустые поля вместо новых. Контракт должен жить в одном месте:
+//  отдельный maven-модуль с proto (contract-first) или Buf registry.
+//  Заодно java_package указывает на com.dating.core.* — чужой неймспейс внутри matching.
 syntax="proto3";
 
 package dating.profile.v1;
