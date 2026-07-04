@@ -5,6 +5,8 @@ spring:
     client:
       channel:
         profile:
+          # TODO: захардкожен localhost — в docker-compose нужен env-override,
+          #  как CORE_URI у гейтвея: ${PROFILE_GRPC_TARGET:static://localhost:9090}
           target: static://localhost:9090
 
 server:

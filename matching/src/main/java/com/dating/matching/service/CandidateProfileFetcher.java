@@ -25,6 +25,8 @@ public class CandidateProfileFetcher {
         this.stub = stub;
     }
 // Альтернатива batch: 1 round-trip, но «всё или ничего» по отказу и без демонстрации concurrency. Оправдан для одного источника; fan-out — для мульти-источника + best-effort
+    // TODO: у batch-вызова нет deadline (у fetchOne есть, 2s) — если core завис,
+    //  этот вызов будет ждать вечно. gRPC-правило: deadline у КАЖДОГО вызова.
     public List<ProfileMessage> batchFetchCandidateProfiles(List<UUID> candidateIds) {
         return stub.getProfilesBatch(GetProfilesBatchRequest
                                     .newBuilder()

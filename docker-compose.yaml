@@ -67,6 +67,9 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # TODO: сервиса matching здесь нет. Для добавления нужно: Dockerfile в ./matching,
+  #  PROFILE_GRPC_TARGET=static://core:9090 (после env-override в его application.yaml),
+  #  depends_on core. Порт 9090 наружу публиковать не надо — общение внутри сети compose.
   core:
     build: ./dating-core
     depends_on:
