@@ -19,7 +19,7 @@ import java.util.UUID;
 @Table(name="refresh_tokens")
 public class RefreshToken extends BaseEntity {
     @Id
-    @UuidGenerator(style = UuidGenerator.Style.TIME)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(name="user_id", nullable = false)
