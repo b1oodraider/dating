@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004.1-create-likes
+      author: dating
+      changes:
+        - createTable:
+            tableName: likes
+            columns:
+              - column: {name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: {name: from_user_id, type: UUID, constraints: { nullable: false } }
+              - column: {name: to_user_id, type: UUID, constraints: { nullable: false } }
+              - column: {name: created_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: {name: updated_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: likes
+            columnNames: from_user_id, to_user_id
+            constraintName: uk_likes
+
+
+  - changeSet:
+      id: 004.2-create-matches
+      author: dating
+      changes:
+        - createTable:
+            tableName: matches
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_low, type: UUID, constraints: { nullable: false } }
+              - column: { name: user_high, type: UUID, constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: matches
+            columnNames: user_low, user_high

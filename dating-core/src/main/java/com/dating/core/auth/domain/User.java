@@ -16,7 +16,7 @@ import java.util.UUID;
 @Table(name="users")
 public class User extends BaseEntity {
     @Id()
-    @UuidGenerator(style = UuidGenerator.Style.TIME)
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(unique=true, nullable = false)
