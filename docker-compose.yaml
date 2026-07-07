@@ -4,7 +4,6 @@ x-common-env: &common-env
 services:
   redis:
     image: redis:8-alpine
-    container_name: redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -44,7 +43,6 @@ services:
 
   kafka:
     image: apache/kafka:4.3.1
-    container_name: kafka
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -87,6 +85,21 @@ services:
       <<: *common-env
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  notification:
+    build: ./notification
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      <<: *common-env
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8084/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 10
