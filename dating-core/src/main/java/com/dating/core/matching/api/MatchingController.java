@@ -22,6 +22,11 @@ public class MatchingController {
         this.likeMatchService = likeMatchService;
     }
 
+    // TODO(API-баг): пара УЖЕ сматчена → setMatch ловит unique violation → вернётся {"match": false},
+    //  хотя матч существует. Так ответ получит и проигравший гонку, и повторно лайкнувший.
+    //  При violation надо проверять «матч уже есть?» и отвечать true (see: idempotent API).
+    // TODO(REST-конвенция): глагол в URL — обычно POST /api/likes с телом, а не /matching/setLike.
+    // TODO: результат setLike игнорируется — повторный лайк молча проходит; осознанно ли?
     @PostMapping("/setLike")
     public ResponseEntity<Map<String, Boolean>> setLike(@AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody NewLike newLike) {
         if(principal.userId().equals(newLike.toUserId())) { return ResponseEntity.status(400).body(Map.of("match", false));}
