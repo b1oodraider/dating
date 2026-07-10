@@ -85,7 +85,7 @@ class E2EProxyTest extends GatewayIntegrationTest {
     @Test
     void upstreamTimeout_returnsFallback() {
         stubFor(get(urlEqualTo("/api/profiles/me"))
-                .willReturn(aResponse().withFixedDelay(1200)));
+                .willReturn(aResponse().withFixedDelay(12000)));
 
         webClient.get().uri("/api/profiles/me")
                 .header("Authorization", bearer())
