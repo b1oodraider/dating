@@ -12,10 +12,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.grpc.test.autoconfigure.LocalGrpcServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,19 +50,19 @@ public class GrpcIntegrationTest {
     private UserRepository userRepo;
 
     @LocalGrpcServerPort
-    private static int grpcPort;
+    private int grpcPort;
 
-    private static ManagedChannel channel;
-    private static ProfileServiceGrpc.ProfileServiceBlockingStub stub;
+    private ManagedChannel channel;
+    private  ProfileServiceGrpc.ProfileServiceBlockingStub stub;
 
-    @BeforeAll
-    static void setup() {
+    @BeforeEach
+    void setupChannel() {
         channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
         stub = ProfileServiceGrpc.newBlockingStub(channel);
     }
 
-    @AfterAll
-    static void tearDown() {
+    @AfterEach
+    void tearDown() {
         channel.shutdownNow();
     }
 
