@@ -5,7 +5,7 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
     branches: [ master ]
 
@@ -26,12 +26,8 @@ jobs:
     runs-on: ubuntu-latest              # GitHub-раннер; в нём УЖЕ есть Docker (нужно Testcontainers)
     strategy:
       fail-fast: false                  # падение одного модуля не отменяет сборку второго
-      # TODO: CI устарел — модуль matching не собирается и не тестируется.
-      #  Перед добавлением в матрицу учти: (1) в matching нет mvnw — скопируй обёртку
-      #  из dating-core (mvnw, mvnw.cmd, .mvn/) или замени команду на системный `mvn`;
-      #  (2) в matching нет Dockerfile — без него джоба docker-image для него упадёт.
       matrix:
-        module: [ dating-core, api-gateway ]
+        module: [ dating-core, api-gateway, matching, notification ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
