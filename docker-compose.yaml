@@ -18,12 +18,11 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      core:
-        condition: service_healthy
     environment:
       REDIS_HOST: redis
       <<: *common-env
       CORE_URI: http://core:8081
+      MATCHING_URI: http://matching:8083
     restart: unless-stopped
 
   postgres:
@@ -65,9 +64,6 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # TODO: сервиса matching здесь нет. Для добавления нужно: Dockerfile в ./matching,
-  #  PROFILE_GRPC_TARGET=static://core:9090 (после env-override в его application.yaml),
-  #  depends_on core. Порт 9090 наружу публиковать не надо — общение внутри сети compose.
   core:
     build: ./dating-core
     depends_on:
@@ -90,6 +86,23 @@ services:
       retries: 10
     restart: unless-stopped
 
+  matching:
+    build: ./matching
+    depends_on:
+      core:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      PROFILE_GRPC_TARGET: static://core:9090
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   notification:
     build: ./notification
     depends_on:
@@ -97,7 +110,6 @@ services:
         condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP: kafka:9092
-      <<: *common-env
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8084/actuator/health"]
       interval: 10s

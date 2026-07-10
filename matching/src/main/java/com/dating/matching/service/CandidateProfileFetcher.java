@@ -6,6 +6,8 @@ import com.dating.core.profile.grpc.proto.GetProfilesBatchRequest;
 import com.dating.core.profile.grpc.proto.ProfileMessage;
 import com.dating.core.profile.grpc.proto.ProfileServiceGrpc;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,21 +20,27 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class CandidateProfileFetcher {
+    private static final int GRPC_DEADLINE_SECONDS = 2;
 
+    private static final Logger log = LoggerFactory.getLogger(CandidateProfileFetcher.class);
     private final ProfileServiceGrpc.ProfileServiceBlockingStub stub;
 
     public CandidateProfileFetcher(ProfileServiceGrpc.ProfileServiceBlockingStub stub) {
         this.stub = stub;
     }
-// Альтернатива batch: 1 round-trip, но «всё или ничего» по отказу и без демонстрации concurrency. Оправдан для одного источника; fan-out — для мульти-источника + best-effort
-    // TODO: у batch-вызова нет deadline (у fetchOne есть, 2s) — если core завис,
-    //  этот вызов будет ждать вечно. gRPC-правило: deadline у КАЖДОГО вызова.
+
     public List<ProfileMessage> batchFetchCandidateProfiles(List<UUID> candidateIds) {
-        return stub.getProfilesBatch(GetProfilesBatchRequest
-                                    .newBuilder()
-                                    .addAllIds(candidateIds.stream().map(UUID::toString).toList())
-                                    .build())
+        try {
+            return stub.withDeadlineAfter(GRPC_DEADLINE_SECONDS, TimeUnit.SECONDS)
+                    .getProfilesBatch(GetProfilesBatchRequest
+                            .newBuilder()
+                            .addAllIds(candidateIds.stream().map(UUID::toString).toList())
+                            .build())
                     .getProfilesList();
+        } catch (StatusRuntimeException e) {
+            log.warn("Uncommited list of matching profile due to connection problems");
+            return List.of();
+        }
     }
 
     public List<ProfileMessage> fetchCandidateProfiles(List<UUID> candidateIds) {
@@ -55,7 +63,7 @@ public class CandidateProfileFetcher {
 
     private Optional<ProfileMessage> fetchOne(UUID id) {
         try {
-            var res = stub.withDeadlineAfter(2, TimeUnit.SECONDS).getProfile(GetProfileRequest.newBuilder().setId(id.toString()).build());
+            var res = stub.withDeadlineAfter(GRPC_DEADLINE_SECONDS, TimeUnit.SECONDS).getProfile(GetProfileRequest.newBuilder().setId(id.toString()).build());
             return Optional.of(res);
         } catch (StatusRuntimeException e) {
             return Optional.empty();
