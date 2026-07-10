@@ -53,7 +53,7 @@ resilience4j:
       coreCircuitBreaker:
         failureRateThreshold: 50
         slowCallRateThreshold: 100
-        slowCallDurationThreshold: 4000ms
+        slowCallDurationThreshold: 2000ms
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
@@ -62,7 +62,7 @@ resilience4j:
       matchingCircuitBreaker:
         failureRateThreshold: 50
         slowCallRateThreshold: 100
-        slowCallDurationThreshold: 4000ms
+        slowCallDurationThreshold: 2000ms
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
@@ -71,9 +71,9 @@ resilience4j:
   timelimiter:
     instances:
       coreCircuitBreaker:
-        timeoutDuration: 8s
+        timeoutDuration: 3s
       matchingCircuitBreaker:
-        timeout-duration: 8s
+        timeout-duration: 3s
 
 management:
   endpoints:

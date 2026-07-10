@@ -3,6 +3,7 @@ package com.dating.api_gateway;
 import com.dating.api_gateway.support.GatewayIntegrationTest;
 import com.github.tomakehurst.wiremock.http.Fault;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -16,6 +17,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
  *
  * Инфраструктура (подъём контекста, WireMock, Redis, JWT-хелпер) — в GatewayIntegrationTest.
  */
+@ActiveProfiles("test")
 class E2EProxyTest extends GatewayIntegrationTest {
 
     /**
