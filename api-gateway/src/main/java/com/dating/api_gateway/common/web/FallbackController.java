@@ -18,4 +18,12 @@ public class FallbackController {
         var response = Map.of("error", "Service unavailable", "message", "сервис временно недоступен");
         return Mono.just(ResponseEntity.status(503).body(response));
     }
+
+    // Здесь и в application просто копии пока не углублюсь для уникальных настроек
+    @RequestMapping("/matching")
+    public Mono<ResponseEntity<Map<String,String>>> matchingFallback() {
+        var response = Map.of("error", "Service unavailable", "message", "сервис временно недоступен");
+        return Mono.just(ResponseEntity.status(503).body(response));
+    }
+
 }

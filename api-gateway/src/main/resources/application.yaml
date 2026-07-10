@@ -12,7 +12,7 @@ spring:
             - id: coreRoute
               uri: ${CORE_URI:http://localhost:8081}
               predicates:
-                - Path=/api/**
+                - Path=/api/profiles/**,/api/auth/**,/api/matching/**
               filters:
                 - name: RequestRateLimiter
                   args:
@@ -25,6 +25,22 @@ spring:
                   args:
                     name: coreCircuitBreaker
                     fallbackUri: forward:/fallback/core
+            - id: matchingRoute
+              uri: ${MATCHING_URI:http://localhost:8083}
+              predicates:
+                - Path=/api/recommendations/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter:
+                      replenishRate: 10
+                      burstCapacity: 20
+                      requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+                - name: CircuitBreaker
+                  args:
+                    name: matchingCircuitBreaker
+                    fallbackUri: forward:/fallback/matching
 
   data:
     redis:
@@ -42,10 +58,23 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
         waitDurationInOpenState: 60s
+#      пока что копия core, сделано для индивидуальной настройки в будущем
+      matchingCircuitBreaker:
+        failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 500ms
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: 60s
+        
   timelimiter:
     instances:
       coreCircuitBreaker:
         timeoutDuration: 1s
+      matchingCircuitBreaker:
+        timeout-duration:
+          seconds: 1
 
 management:
   endpoints:

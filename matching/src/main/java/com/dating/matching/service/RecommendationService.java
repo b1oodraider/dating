@@ -4,6 +4,8 @@ import com.dating.core.profile.grpc.proto.ProfileMessage;
 import com.dating.matching.dto.RecommendationDTO;
 import com.dating.matching.dto.Criteria;
 import com.dating.matching.service.records.Scored;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,6 +18,7 @@ import java.util.UUID;
 @Service
 public class RecommendationService {
 
+    private static final Logger log = LoggerFactory.getLogger(RecommendationService.class);
     private final CandidateProfileFetcher fetcher;
     private final RankingService rankings;
 
@@ -31,6 +34,7 @@ public class RecommendationService {
         Criteria me = new Criteria(28, "Moscow", "female");
         return profiles.stream()
                 .map(p-> new Scored(p, rankings.score(p, me)))
+                .filter(p-> p.score() > 0)
                 .sorted(Comparator.comparingDouble(Scored::score).reversed())
                 .limit(topK)
                 .map(Scored::profile)
@@ -38,7 +42,7 @@ public class RecommendationService {
                 .toList();
     }
 
-    // TODO: реальная выборка кандидатов (Neo4j/фильтры) — вне 18-дневного спринта
+    // TODO: реальная выборка кандидатов (Neo4j/фильтры) — вне первого спринта
     public List<UUID> selectCandidateIds(UUID userId) {
         return List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
     }
@@ -49,8 +53,8 @@ public class RecommendationService {
             if (!pm.getBirthDate().isBlank()) {
                 age = Period.between(LocalDate.parse(pm.getBirthDate()), LocalDate.now()).getYears();
             }
-            //TODO: добавить лог с ошибкой
         } catch (DateTimeParseException _) {
+            log.error("Wrong DateTime format of birthDate in profile with id={} and userId={}", pm.getId(), pm.getUserId());
         }
 
         return new RecommendationDTO(pm.getUserId(),
