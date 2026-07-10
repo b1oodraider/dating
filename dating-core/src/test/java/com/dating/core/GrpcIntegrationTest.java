@@ -17,11 +17,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.grpc.test.autoconfigure.LocalGrpcServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,16 +35,16 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 // TODO: gRPC-сервер поднимается на фиксированном порту 9090 — тест упадёт, если порт занят
 //  (например, локально запущен core). Правильно: spring.grpc.server.port=0 в @SpringBootTest
 //  properties + @LocalGrpcPort в поле (аналогично RANDOM_PORT для HTTP).
-// TODO: контейнера Kafka здесь нет, контекст стартует только потому, что kafka-клиент
-//  подключается лениво, а тесты не публикуют событий. Хрупко: любой тест с регистрацией
-//  пользователя это сломает. Либо добавить KafkaContainer, как в AuthFlowIntegrationTest,
-//  либо знать про это ограничение.
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = "spring.grpc.server.port=0")
 @Testcontainers
 public class GrpcIntegrationTest {
     @Container
     @ServiceConnection
     private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:16-alpine");
+
+    @Container
+    @ServiceConnection
+    private static final KafkaContainer kafkaContainer = new KafkaContainer("apache/kafka:4.3.1");
 
     @Autowired
     private ProfileRepository repo;
@@ -50,8 +52,8 @@ public class GrpcIntegrationTest {
     @Autowired
     private UserRepository userRepo;
 
-
-    private static final int grpcPort = 9090;
+    @LocalGrpcServerPort
+    private static int grpcPort;
 
     private static ManagedChannel channel;
     private static ProfileServiceGrpc.ProfileServiceBlockingStub stub;
