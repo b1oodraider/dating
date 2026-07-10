@@ -1,0 +1,1 @@
+spring.test.webtestclient.timeout: 10s
