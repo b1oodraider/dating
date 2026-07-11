@@ -5,41 +5,43 @@ import com.dating.core.matching.domain.Like;
 import com.dating.core.matching.domain.Match;
 import com.dating.core.matching.repo.LikeRepository;
 import com.dating.core.matching.repo.MatchRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Service
 public class LikeMatchService {
+    private static final Logger log = LoggerFactory.getLogger(LikeMatchService.class);
     private final LikeRepository likeRepository;
 
     private final MatchRepository matchRepository;
 
     private final ApplicationEventPublisher events;
 
-    //TODO: переделать без этого, слишком костыльно
-    private final TransactionTemplate tt;
+    private final PlatformTransactionManager txManager;
 
-    public LikeMatchService(LikeRepository likeRepository, MatchRepository matchRepository, ApplicationEventPublisher events, TransactionTemplate tt) {
+    public LikeMatchService(LikeRepository likeRepository, MatchRepository matchRepository, ApplicationEventPublisher events, PlatformTransactionManager txManager) {
         this.likeRepository = likeRepository;
         this.matchRepository = matchRepository;
         this.events = events;
-        tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        this.tt = tt;
+        this.txManager = txManager;
     }
 
-    @Transactional
     public boolean setLike(UUID fromUserId, UUID toUserId) {
         try {
-            var like = tt.execute(_ -> likeRepository.saveAndFlush(new Like(fromUserId, toUserId)));
+            requiresNew(_ -> likeRepository.saveAndFlush(new Like(fromUserId, toUserId)));
             return true;
         } catch (DataIntegrityViolationException e) {
+            log.debug("Check if it's not Duplicate but still exception", e);
             return false;
         }
     }
@@ -52,24 +54,29 @@ public class LikeMatchService {
         // проверяем на наличие обратного лайка
         if (!likeRepository.existsByFromUserIdAndToUserId(toUserId, fromUserId)) {return false;}
 
-        UUID low, high;
-
-        low = (toUserId.compareTo(fromUserId) < 0) ? toUserId : fromUserId;
-        high = (fromUserId.compareTo(toUserId) > 0) ? fromUserId : toUserId;
-
-        var match = new Match(low, high);
+        var match = new Match(fromUserId, toUserId);
 
         try {
-            tt.execute(_ -> {
+            requiresNew(_ -> {
                 var saved = matchRepository.saveAndFlush(match);
-                events.publishEvent(new MatchCreated(saved.getId(), low, high, UUID.randomUUID(), Instant.now()));
+                events.publishEvent(MatchCreated.from(saved));
 
             return saved;
             });
             return true;
 
         } catch (DataIntegrityViolationException e) {
+            log.debug("Check if it's not Duplicate but still exception", e);
             return matchRepository.existsByUserLowAndUserHigh(match.getUserLow(), match.getUserHigh());
         }
+    }
+
+    private <T> T requiresNew(TransactionCallback<T> callback) {
+
+        var tt = new TransactionTemplate(txManager);
+
+        tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        return tt.execute(callback);
     }
 }

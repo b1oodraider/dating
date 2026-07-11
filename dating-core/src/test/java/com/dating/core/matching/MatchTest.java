@@ -14,9 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
 
@@ -34,7 +33,7 @@ public class MatchTest {
     MatchRepository matchRepository;
 
     @Mock
-    TransactionTemplate tt;
+    PlatformTransactionManager transactionManager;
 
     @InjectMocks
     LikeMatchService service;
@@ -44,10 +43,14 @@ public class MatchTest {
 
     @BeforeEach
     void stubTransactionTemplateToRunCallback() {
-        lenient().when(tt.execute(any())).thenAnswer(invocation -> {
-            TransactionCallback<?> callback = invocation.getArgument(0);
-            return callback.doInTransaction(new SimpleTransactionStatus());
-        });
+        lenient().when(transactionManager.getTransaction(any()))
+                .thenReturn(new SimpleTransactionStatus());
+
+        lenient().doNothing().when(transactionManager)
+                .commit(any());
+
+        lenient().doNothing().when(transactionManager)
+                .rollback(any());
     }
 
     @Test
