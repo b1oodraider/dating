@@ -96,7 +96,31 @@ public class LikeMatchIntegrationTest {
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(()-> assertThat(listener.received).hasSize(1));
     }
 
+    @Test
+    void setMatch_afterMatchAlreadyExists_returnsTrueIdempotently() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
 
+        service.setLike(a, b);
+        service.setLike(b, a);
+        boolean firstMatch = service.setMatch(a, b);
+        assertThat(firstMatch).isTrue();
+
+        service.setLike(a, b);
+        boolean secondMatch = service.setMatch(a, b);
+
+        assertThat(secondMatch).isTrue();
+
+        UUID low  = a.compareTo(b) < 0 ? a : b;
+        UUID high = a.compareTo(b) < 0 ? b : a;
+        Integer matchCount = jdbc.queryForObject(
+                "select count(*) from matches where user_low = cast(? as uuid) and user_high = cast(? as uuid)",
+                Integer.class, low.toString(), high.toString());
+        assertThat(matchCount).isEqualTo(1);
+
+
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertThat(listener.received).hasSize(1));
+    }
 
 
 

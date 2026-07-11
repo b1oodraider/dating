@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
 
@@ -28,8 +30,11 @@ public class MatchTest {
     @Mock
     MatchRepository matchRepository;
 
+    @Mock
+    TransactionTemplate tt;
+
     @InjectMocks
-    LikeMatchService serv;
+    LikeMatchService service;
 
     @Mock
     ApplicationEventPublisher publisher;
@@ -45,9 +50,9 @@ public class MatchTest {
         Match m1 = new Match(high, low);
         Match m2 = new Match(low, high);
 
-        assertThat(m1.getUser_low()).isEqualTo(m2.getUser_low());
-        assertThat(m1.getUser_high()).isEqualTo(m2.getUser_high());
-        assertThat(m1.getUser_low().compareTo(m2.getUser_high())).isLessThan(0);
+        assertThat(m1.getUserLow()).isEqualTo(m2.getUserLow());
+        assertThat(m1.getUserHigh()).isEqualTo(m2.getUserHigh());
+        assertThat(m1.getUserLow().compareTo(m2.getUserHigh())).isLessThan(0);
     }
 
     @Test
@@ -55,15 +60,30 @@ public class MatchTest {
         UUID user1 = UUID.randomUUID();
         UUID user2 = UUID.randomUUID();
         when(likeRepository.existsByFromUserIdAndToUserId(user2, user1)).thenReturn(false);
-        assertThat(serv.setMatch(user1, user2)).isFalse();
+        assertThat(service.setMatch(user1, user2)).isFalse();
         verify(matchRepository, never()).saveAndFlush(any());
         verifyNoInteractions(publisher);
 
         when(likeRepository.existsByFromUserIdAndToUserId(user1, user2)).thenReturn(true);
         when(matchRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThat(serv.setMatch(user2, user1)).isTrue();
+        assertThat(service.setMatch(user2, user1)).isTrue();
         verify(matchRepository).saveAndFlush(any());
         verify(publisher).publishEvent(any(MatchCreated.class));
+    }
+
+    @Test
+    void setMatch_uniqueViolationOnInsert_butMatchAlreadyExists_returnsTrue() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        UUID low  = a.compareTo(b) < 0 ? a : b;
+        UUID high = a.compareTo(b) < 0 ? b : a;
+
+        when(likeRepository.existsByFromUserIdAndToUserId(b, a)).thenReturn(true);
+
+        boolean result = service.setMatch(a, b);
+
+        assertThat(result).isTrue();
+        verify(publisher, never()).publishEvent(any());
     }
 }
