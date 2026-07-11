@@ -1,12 +1,10 @@
 package com.dating.core.matching.service;
 
 import com.dating.core.matching.api.events.MatchCreated;
-import com.dating.core.matching.dto.NewLike;
 import com.dating.core.matching.domain.Like;
 import com.dating.core.matching.domain.Match;
 import com.dating.core.matching.repo.LikeRepository;
 import com.dating.core.matching.repo.MatchRepository;
-import jakarta.transaction.Transaction;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -15,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,6 +23,7 @@ public class LikeMatchService {
 
     private final ApplicationEventPublisher events;
 
+    //TODO: переделать без этого, слишком костыльно
     private final TransactionTemplate tt;
 
     public LikeMatchService(LikeRepository likeRepository, MatchRepository matchRepository, ApplicationEventPublisher events, TransactionTemplate tt) {

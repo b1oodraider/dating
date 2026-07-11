@@ -1,6 +1,7 @@
 package com.dating.core.matching;
 
 import com.dating.core.matching.service.LikeMatchService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +41,11 @@ public class LikeMatchIntegrationTest {
 
     @Autowired
     LikeMatchService service;
+
+    @BeforeEach
+    void resetListener() {
+        listener.received.clear();
+    }
 
 
     @Test
