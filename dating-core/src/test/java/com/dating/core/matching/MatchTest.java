@@ -6,6 +6,7 @@ import com.dating.core.matching.domain.Match;
 import com.dating.core.matching.repo.LikeRepository;
 import com.dating.core.matching.repo.MatchRepository;
 import com.dating.core.matching.service.LikeMatchService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
@@ -39,6 +42,13 @@ public class MatchTest {
     @Mock
     ApplicationEventPublisher publisher;
 
+    @BeforeEach
+    void stubTransactionTemplateToRunCallback() {
+        lenient().when(tt.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(new SimpleTransactionStatus());
+        });
+    }
 
     @Test
     public void sortOnCreation() {
@@ -81,9 +91,14 @@ public class MatchTest {
 
         when(likeRepository.existsByFromUserIdAndToUserId(b, a)).thenReturn(true);
 
+        when(matchRepository.saveAndFlush(any()))
+                .thenThrow(new DataIntegrityViolationException("uk_matches violation"));
+        when(matchRepository.existsByUserLowAndUserHigh(low, high)).thenReturn(true);
+
         boolean result = service.setMatch(a, b);
 
         assertThat(result).isTrue();
+        verify(matchRepository).existsByUserLowAndUserHigh(low, high);
         verify(publisher, never()).publishEvent(any());
     }
 }
