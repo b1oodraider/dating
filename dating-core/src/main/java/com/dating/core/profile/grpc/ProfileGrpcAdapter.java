@@ -19,6 +19,8 @@ public class ProfileGrpcAdapter extends ProfileServiceGrpc.ProfileServiceImplBas
         this.profileService = profileService;
     }
 
+    private final static int MAX_BATCH_SIZE = 100;
+
     @Override
     public void getProfile(GetProfileRequest request, StreamObserver<ProfileMessage> responseObserver) {
         try {
@@ -35,11 +37,15 @@ public class ProfileGrpcAdapter extends ProfileServiceGrpc.ProfileServiceImplBas
         }
     }
 
-    // TODO: нет лимита на размер батча — клиент может прислать 100к id, и это уедет
-    //  одним IN-запросом в БД. Ограничить (например, 100) и отвечать INVALID_ARGUMENT при превышении.
     @Override
     public void getProfilesBatch(GetProfilesBatchRequest request,
                                  StreamObserver<GetProfilesBatchResponse> responseObserver) {
+        if (request.getIdsList().size() > MAX_BATCH_SIZE) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Batch size is too big")
+                    .asRuntimeException());
+            return;
+        }
         try {
             List<UUID> ids = request.getIdsList().stream().map(UUID::fromString).toList();
             List<ProfileResponse> dtos = profileService.getProfilesBatch(ids);

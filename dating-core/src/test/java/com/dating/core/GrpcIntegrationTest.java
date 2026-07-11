@@ -22,6 +22,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,9 +30,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
-// TODO: gRPC-сервер поднимается на фиксированном порту 9090 — тест упадёт, если порт занят
-//  (например, локально запущен core). Правильно: spring.grpc.server.port=0 в @SpringBootTest
-//  properties + @LocalGrpcPort в поле (аналогично RANDOM_PORT для HTTP).
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = "spring.grpc.server.port=0")
 @Testcontainers
 public class GrpcIntegrationTest {
@@ -80,8 +78,21 @@ public class GrpcIntegrationTest {
         var result = stub.getProfile(GetProfileRequest.newBuilder().setId(saved.getId().toString()).build());
 
         assertThat(result.getDisplayName()).isEqualTo("TestProfile1");
+    }
 
+    @Test
+    public void getProfilesBatch_throwsInvalidArgument() {
+        assertThatThrownBy(()-> stub.getProfilesBatch(GetProfilesBatchRequest.newBuilder().addAllIds(createBatch()).build()))
+                .isInstanceOf(StatusRuntimeException.class)
+                .extracting(e -> ((StatusRuntimeException)e).getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+    }
 
+    private List<String> createBatch() {
+        var list = new ArrayList<String>();
+        for (int i = 0; i < 102; ++i) {
+            list.add(UUID.randomUUID().toString());
+        }
+        return list;
     }
 
     @Test

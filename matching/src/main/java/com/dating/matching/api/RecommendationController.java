@@ -23,6 +23,7 @@ public class RecommendationController {
 
     // TODO(security): сервис ничем не защищён и не стоит за gateway — любой может запросить
     //  рекомендации для чужого userId. Минимум: маршрут в gateway + userId из JWT, а не из параметра.
+    //  UPDATE: сервис закрыт за gateway, осталось допилить jwt
     // TODO: валидация topK (отрицательное/огромное значение сейчас проходит молча;
     //  limit(-1) кинет IllegalArgumentException -> 500).
     @GetMapping("/recommendations")
