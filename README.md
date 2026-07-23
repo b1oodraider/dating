@@ -82,7 +82,3 @@ cd <module> && ./mvnw test   # нужен Docker (Testcontainers)
 - Вынос matching-домена (лайки/матчи/preferences) из core в отдельный сервис.
 - Durable-дедупликация в notification (Postgres вместо in-memory), реальный канал доставки (RabbitMQ, DLQ, ретраи).
 - Общий proto-модуль вместо копий контракта; observability (Micrometer → Prometheus, OpenTelemetry).
-
-## Документация
-
-Инженерные заметки — в [`guides/`](guides/): разборы решений по темам (JWT, JPA, gRPC, Outbox/Kafka, конкурентность), итоги код-ревью и живой план работ.
