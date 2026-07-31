@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005.1-create-match-preferences
+      author: dating
+      changes:
+        - createTable:
+            tableName: match_preferences
+            columns:
+              - column: {name: id, type: UUID, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: user_id, type: UUID, constraints: { nullable: false, unique: true } }
+              - column: {name: desired_gender, type: VARCHAR(16), constraints: { nullable: true } }
+              - column: {name: min_age, type: INT, constraints: { nullable: true } }
+              - column: {name: max_age, type: INT, constraints: { nullable: true } }
+              - column: {name: city, type: VARCHAR(255), constraints: { nullable: true } }
+              - column: { name: created_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+
+  - changeSet:
+      id: 005.2-create-check-age-constraint
+      author: dating
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE match_preferences ADD CONSTRAINT ck_match_preferences_age_range CHECK(min_age >= 18 AND max_age >=18 AND min_age <= max_age AND max_age <=200 AND min_age<=200)
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE match_preferences DROP CONSTRAINT ck_match_preferences_age_range

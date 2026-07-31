@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-profiles-candidate-index
+      author: dating
+      changes:
+        - createIndex:
+            indexName: profiles_candidate
+            tableName: profiles
+            columns:
+            - column: {name: gender}
+            - column: {name: birth_date}

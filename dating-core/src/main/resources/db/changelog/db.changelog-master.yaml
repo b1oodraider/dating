@@ -7,3 +7,7 @@ databaseChangeLog:
       file: db/changelog/003-create-profiles.yaml
   - include:
       file: db/changelog/004-create-likes-matches.yaml
+  - include:
+      file: db/changelog/005-create-match-preferences.yaml
+  - include:
+      file: db/changelog/006-add-profiles-candidate-index.yaml
