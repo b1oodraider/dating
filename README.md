@@ -56,7 +56,7 @@ flowchart LR
 docker compose up          # redis, postgres, kafka, core, gateway, matching, notification
 ```
 
-Вход — через gateway: `http://localhost:8088/api/...`. Сквозной сценарий — скриптом `e2e-test.ps1` / `e2e-test.bat`; коллекция запросов — в `postman/`.
+Вход — через gateway: `http://localhost:8088/api/...`.
 
 Один модуль локально:
 
