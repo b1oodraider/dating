@@ -26,6 +26,13 @@ public class ApiGatewayApplication {
 	 * Без заголовка резолвер отдаёт обычный remote address.
 	 */
 	@Bean
+	// TODO(security): maxTrustedIndex(1) берёт ПОСЛЕДНИЙ X-Forwarded-For, но перед gateway нет
+	//  доверенного прокси — порт 8088 проброшен наружу напрямую. Значит заголовок целиком под
+	//  контролем клиента: новый XFF на каждый запрос = новое ведро, rate-limit не работает вовсе
+	//  (ровно этим приёмом GatewayRateLimiterTest получает "своё ведро"). До появления nginx
+	//  резолвить по remoteAddress; XFF вернуть вместе с реальным прокси.
+	// TODO(security): ключ лимита — IP; за мобильным NAT это одно ведро на район. Для
+	//  аутентифицированных маршрутов ключом должен быть sub из JWT.
 	KeyResolver userKeyResolver() {
 		var ipResolver = XForwardedRemoteAddressResolver.maxTrustedIndex(1);
 		return exchange -> {

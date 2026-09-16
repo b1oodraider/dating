@@ -15,6 +15,11 @@ public class NotificationApplication {
 
 
 	@Bean
+    // TODO(bug): no-arg JacksonJsonMessageConverter строит СВОЙ ObjectMapper мимо spring.jackson.*.
+    //  Проверить FAIL_ON_UNKNOWN_PROPERTIES: если включён, первое же расширение event-рекорда в core
+    //  положит консюмера на всех сообщениях, а DLT нет. Передавать бин маппера явно.
+    // TODO(debt): контракт события — копипаста рекордов между core и notification, тест собирает JSON
+    //  руками. Нужен тест "core сериализует -> notification десериализует".
     RecordMessageConverter converter() {
 		return new JacksonJsonMessageConverter();
 	}

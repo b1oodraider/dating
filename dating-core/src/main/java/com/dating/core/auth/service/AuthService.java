@@ -31,6 +31,9 @@ import java.util.UUID;
  */
 
 @Service
+// TODO(security): UserStatus.BLOCKED нигде не проверяется — login и refresh выдают токены
+//  заблокированному пользователю, бан физически не работает. Проверять статус в обоих методах
+//  + отзывать все refresh-токены при блокировке.
 public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -101,6 +104,10 @@ public class AuthService {
      * @throws BadCredentialsException если токен неизвестен или недействителен
      */
     @Transactional
+    // TODO(security)(bug): reuse-detection НЕ РАБОТАЕТ — метод @Transactional, массовый revoke идёт
+    //  через dirty checking, а следом летит BadCredentialsException (RuntimeException) => транзакция
+    //  откатывается и ни один токен не отзывается. Чинить: noRollbackFor или отзыв в REQUIRES_NEW
+    //  ДО throw. Проверять только интеграционным тестом — юнит с моками эту дыру не увидит.
     public LoginResponse refresh(String refreshToken) {
         String hash = sha256(refreshToken);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)

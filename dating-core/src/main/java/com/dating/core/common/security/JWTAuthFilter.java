@@ -49,6 +49,8 @@ public class JWTAuthFilter extends OncePerRequestFilter {
             // parseClaims — единственная проверка подписи; subject и role
             // достаём из уже распарсенных claims, не парся токен повторно
             jwtService.parseClaims(token).ifPresent(claims -> {
+                // TODO(bug): sub не-UUID => IllegalArgumentException летит из фильтра мимо GlobalExceptionHandler
+                //  (500 вместо 401); отсутствующий claim role даёт authority "ROLE_null". Обернуть разбор.
                 UUID userId = UUID.fromString(claims.getSubject());
                 String role = claims.get("role", String.class);
 

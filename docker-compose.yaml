@@ -1,3 +1,10 @@
+# TODO(ops): топики user-events / user-matching-events нигде не объявлены — создаются
+#  автосозданием с 1 партицией. На управляемой Kafka автосоздание часто запрещено (сервисы просто
+#  не заработают), а с одной партицией notification не масштабируется. Объявить явно.
+# TODO(security): наружу только plain HTTP — пароли и bearer-токены идут открытым текстом.
+#  TLS-терминация перед gateway до любого деплоя.
+# TODO(security): все сервисы в одной плоской сети, Redis без requirepass — доступ к одному
+#  контейнеру = доступ к БД, брокеру и gRPC-порту 9090 (gRPC без аутентификации). Разделить сети.
 x-common-env: &common-env
   JWT_SECRET: change-me-in-prod-use-at-least-32-bytes-secret-key
 

@@ -21,6 +21,11 @@ public class GlobalExceptionHandler {
     }
 
     /** Нарушение бизнес-правил (напр. email занят) → 409. */
+    // TODO(bug): IllegalStateException — базовый JDK-тип: сюда попадает любое системное исключение
+    //  (например "SHA-256 is not available" из AuthService) и уезжает клиенту как 409 с внутренним
+    //  текстом. Завести доменное ConflictException/EmailAlreadyUsedException.
+    // TODO(bug): нет хендлеров DataIntegrityViolationException (перелив VARCHAR => 500 вместо 400/409),
+    //  IllegalArgumentException и catch-all Exception => 500 без утечки деталей.
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail handleIllegalStateException(IllegalStateException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());

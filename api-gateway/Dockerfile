@@ -11,4 +11,7 @@ FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8088
+# TODO(security): контейнер бежит от root — добавить непривилегированного пользователя
+#  (RUN adduser -D app && USER app). Базовые образы не запинены по digest, .dockerignore нет.
+# TODO(ci): jar пересобирается здесь с -DskipTests — образ собран не той сборкой, что прошла тесты.
 ENTRYPOINT ["java", "-jar", "app.jar"]

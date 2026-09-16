@@ -1,3 +1,7 @@
+# TODO(debt): addUniqueConstraint на matches без constraintName — имя генерит БД, rollback
+#  и будущие миграции по имени не воспроизводимы (у uk_likes имя задано явно).
+# TODO(perf): unique(user_low, user_high) — B-tree с префиксом user_low. Запрос "мои матчи"
+#  по user_high пойдёт seq scan'ом; индекс понадобится вместе с read-эндпоинтом матчей.
 databaseChangeLog:
   - changeSet:
       id: 004.1-create-likes

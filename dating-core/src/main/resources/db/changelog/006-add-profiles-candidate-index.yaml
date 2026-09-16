@@ -1,3 +1,5 @@
+# TODO(arch): индекс profiles_candidate (gender, birth_date) создан под запрос CandidateSearch,
+#  которого ещё нет (день +1, блок 2) — сейчас только замедляет вставку/обновление профилей.
 databaseChangeLog:
   - changeSet:
       id: 006-add-profiles-candidate-index

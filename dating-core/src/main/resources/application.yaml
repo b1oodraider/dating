@@ -1,6 +1,9 @@
 spring:
   application:
     name: dating-core
+  # TODO(ops): пул Hikari не настроен (дефолт 10 соединений), а fan-out matching шлёт до N
+  #  параллельных gRPC-вызовов => часть ждёт коннект и срезается gRPC-дедлайном в 2с.
+  #  Согласовать maximum-pool-size, потолок fan-out и дедлайн одним решением.
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dating}
     username: ${DB_USER:dating}
@@ -11,6 +14,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        # TODO(ops): format_sql=true в основном профиле — многострочный SQL нечитаем в сборщике логов.
         format_sql: true
 
   kafka:
@@ -21,6 +25,13 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  # TODO(ops): Outbox без релея — настроена только schema-initialization. Незавершённые
+  #  event_publication (Kafka была недоступна в AFTER_COMMIT) не переотправляются никогда,
+  #  завершённые не чистятся и таблица растёт без границ. Включить republish-outstanding-events-on-restart
+  #  + completion-mode, добавить метрику count(*) where completion_date is null.
+  #  СВЕРИТЬ с докой Spring Modulith 2.x: точные имена свойств и наличие периодического ресендера.
+  # TODO(ops): при нескольких инстансах core переотправка при старте поднимет ВСЕ незавершённые
+  #  публикации, включая чужие — нужен лизинг строки или один выделенный релей-инстанс.
   modulith:
     events:
       jdbc:
@@ -29,6 +40,9 @@ spring:
 
 app:
   jwt:
+    # TODO(security): дефолтный секрет как fallback — без переменной сервис молча поднимается
+    #  с публично известным ключом подписи HS256 (он же лежит в репозитории). Убрать :default,
+    #  чтобы старт падал. Это нужно ДО любого деплоя, отдельно от переноса секретов в env.
     secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}
     access-ttl-minutes: 15
     refresh-ttl-days: 30
@@ -37,5 +51,11 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# TODO(ops): нет graceful shutdown — SIGTERM при выкатке рвёт in-flight запросы.
+#  server.shutdown=graceful + spring.lifecycle.timeout-per-shutdown-phase.
+# TODO(ops): нет метрик (micrometer/prometheus не подключены ни в одном модуле), а три сценария
+#  деградации молчаливы: публикация не доехала, кандидат отброшен, core лёг -> 200 с пустым списком.
+# TODO(ops): нет структурированных (JSON) логов — logging.structured.format, без новых зависимостей.
+# TODO(security): swagger-ui и /v3/api-docs открыты permitAll — держатся только на сетевой изоляции.
 server:
   port: 8081

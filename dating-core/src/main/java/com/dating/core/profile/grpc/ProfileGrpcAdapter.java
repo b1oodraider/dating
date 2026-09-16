@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.UUID;
 
 @GrpcService
+// TODO(bug): Status.INTERNAL.withCause(e) не передаёт причину по проводу, а логгера в адаптере
+//  нет — исключение исчезает бесследно с обеих сторон. Добавить log.error + withDescription.
+// TODO(test): не покрыт INVALID_ARGUMENT на не-UUID (покрыт только batch > MAX_BATCH_SIZE).
 public class ProfileGrpcAdapter extends ProfileServiceGrpc.ProfileServiceImplBase {
     private final ProfileService profileService;
 

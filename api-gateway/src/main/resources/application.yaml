@@ -81,8 +81,20 @@ management:
       exposure:
         include:
           - health
+          # TODO(security): /actuator/gateway доступен любому аутентифицированному пользователю
+          #  (в permitAll только /actuator/health) — наружу уезжает карта маршрутов с внутренними URI.
+          #  ПРОВЕРИТЬ, доступны ли в Spring Cloud Gateway 2025.1.x пишущие операции этого эндпоинта
+          #  (POST/DELETE /actuator/gateway/routes): если да — это подмена маршрута, а не разведка.
           - gateway
 
+# TODO(ops): CORS не настроен нигде — preflight OPTIONS идёт без Authorization и упирается
+#  в anyExchange().authenticated() -> 401. Браузерный клиент не заработает вообще.
+# TODO(security): нет фильтра RemoveRequestHeader — если identity будут прокидывать заголовком
+#  (X-User-Id для matching), клиентский заголовок пройдёт насквозь и IDOR останется.
+# TODO(ops): нет graceful shutdown и метрик.
+# TODO(debt): timeoutDuration / timeout-duration записаны по-разному в двух инстансах TimeLimiter —
+#  работает благодаря relaxed binding, но стоит привести к одному виду.
 app:
   jwt:
+    # TODO(security): дефолтный секрет как fallback — см. такой же TODO в dating-core.
     secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}

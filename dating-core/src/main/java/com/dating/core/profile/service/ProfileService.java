@@ -41,12 +41,16 @@ public class ProfileService {
 
     /** Возвращает набор профилей по набору id (в данный момент нужен для связи с сервисом matches по gRPC)*/
     @Transactional(readOnly = true)
+    // TODO(bug): findAllById молча выкидывает ненайденные id и не сохраняет порядок — клиент батча
+    //  не отличает "профиль удалён" от "не вернулся". Вернуть missing_ids или сопоставлять по id.
     public List<ProfileResponse> getProfilesBatch(List<UUID> profileIds) {
         return profileRepository.findAllById(profileIds).stream().map(this::toResponse).toList();
     }
 
     /** Обновляет анкету текущего пользователя. */
     @Transactional
+    // TODO(bug): PUT затирает не переданные поля в null; full-replace семантика нигде не заявлена.
+    //  Решить: требовать полный объект или перейти на PATCH/merge.
     public ProfileResponse update(UUID userId, UpdateProfileRequest request) {
         Profile profile = findByUserId(userId);
         profile.update(new ProfileUpdate(request.displayName(),

@@ -1,3 +1,6 @@
+# TODO(debt): этот compose разошёлся с корневым (другой healthcheck Kafka, Postgres и core
+#  проброшены наружу, дубль JWT_SECRET). Удалить или свести в compose.override.yaml —
+#  два расходящихся описания одного стенда это источник "у меня работает".
 services:
   postgres:
     image: postgres:16-alpine

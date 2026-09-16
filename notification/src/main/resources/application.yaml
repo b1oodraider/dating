@@ -7,6 +7,9 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:
+      # TODO(ops): нет error-handler и DLT — "отравленное" сообщение ретраится и молча коммитит offset
+      #  либо блокирует партицию. Настроить DefaultErrorHandler + dead-letter топик.
+      # TODO(ops): нет graceful shutdown и метрик.
       group-id: notification
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

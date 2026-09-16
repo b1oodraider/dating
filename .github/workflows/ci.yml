@@ -19,6 +19,21 @@ concurrency:
 permissions:
   contents: read
 
+# TODO(ci): нет сверки двух копий profile.proto (core и matching) — расхождение контракта не
+#  ловится ничем до рантайма; обе копии к тому же генерят классы в ОДИН пакет com.dating.core.*.
+#  Шаг diff, билд падает при различии. День +1 добавит вторую пару (matching.proto).
+# TODO(ci): покрытие не измеряется — jacoco нет ни в одном pom, деградацию тестов не видно.
+# TODO(ci): нет timeout-minutes — зависший Testcontainers держит джобу до дефолтных 6 часов.
+# TODO(ci): образ пересобирается внутри Dockerfile с -DskipTests => публикуется артефакт, который
+#  не тестировался. Собирать jar в build-test и передавать артефактом в docker-image.
+# TODO(ci): cache: maven даёт один ключ на все 4 элемента матрицы — задать cache-dependency-path.
+# TODO(ci): if-no-files-found: ignore на выгрузке отчётов — "тестов не было" выглядит как "всё зелено".
+# TODO(ci): нет сквозной e2e-джобы (compose up -> register -> взаимный лайк -> уведомление);
+#  единственный сценарий лежит в e2e-test.ps1, который под .gitignore и требует Windows.
+# TODO(ci): нет проверки единой версии spring-boot-starter-parent (api-gateway отстал на 4.0.7).
+# TODO(ci): mockito javaagent прописан в surefire только в dating-core, а Mockito используется
+#  ещё в matching и notification (JDK 25 ругается на динамическую подгрузку агента).
+# TODO(ci): комментарий в шапке говорит только про master, а push-триггер включает develop.
 jobs:
   # ---------- Джоба 1: сборка + тесты (каждый модуль — отдельный запуск матрицы) ----------
   build-test:
@@ -63,7 +78,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     strategy:
-      # TODO: добавить matching после появления у него Dockerfile (см. TODO выше)
+      # TODO(ci): Dockerfile есть у ВСЕХ четырёх модулей — этот TODO протух. matching и
+      #  notification в матрицу не добавлены: их образы никогда не публикуются, а сборка их
+      #  Dockerfile не проверяется вообще ничем.
       matrix:
         module: [ dating-core, api-gateway ]
     permissions:

@@ -7,5 +7,9 @@ spring:
         profile:
           target: ${PROFILE_GRPC_TARGET:static://localhost:9090}
 
+# TODO(ops): нет graceful shutdown и нет метрик.
+# TODO(ops): PROFILE_GRPC_TARGET=static://core:9090 — ПРОВЕРИТЬ, переподключается ли канал после
+#  пересоздания контейнера core (docker compose up -d --force-recreate core). Это сценарий
+#  любой выкатки; если нет — нужен dns:/// или retry-политика канала.
 server:
   port: 8083

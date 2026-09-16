@@ -29,6 +29,8 @@ public class CandidateProfileFetcher {
         this.stub = stub;
     }
 
+    // TODO(debt): метод не вызывается нигде (прод идёт через fetchCandidateProfiles) — либо удалить,
+    //  либо перевести на него hydration вместе с тестом.
     public List<ProfileMessage> batchFetchCandidateProfiles(List<UUID> candidateIds) {
         try {
             return stub.withDeadlineAfter(GRPC_DEADLINE_SECONDS, TimeUnit.SECONDS)
@@ -50,6 +52,9 @@ public class CandidateProfileFetcher {
         }
     }
 
+    // TODO(bug): ExecutionException и StatusRuntimeException глушатся без единой строки лога —
+    //  отказ core неотличим от "кандидатов нет", деградация выдачи невидима. Логировать код
+    //  gRPC-статуса и cause, считать метрику отброшенных кандидатов.
     private Optional<ProfileMessage> getQuietly(Future<Optional<ProfileMessage>> future) {
         try {
             return future.get();

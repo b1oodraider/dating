@@ -1,3 +1,7 @@
+# TODO(perf): нет индексов refresh_tokens(user_id, revoked) и (expires_at) — reuse-detection
+#  (findAllByUserIdAndRevokedFalse) и ночная чистка идут seq scan'ом по всей таблице.
+#  Оценка роста: access-ttl 15 мин + ротация на каждый refresh ~ 96 строк на юзера в сутки,
+#  живут 30 дней.
 databaseChangeLog:
   - changeSet:
       id: 002-create-refresh-tokens

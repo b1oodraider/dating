@@ -25,6 +25,13 @@ public class MatchingController {
     }
 
     // TODO(REST-конвенция): глагол в URL — обычно POST /api/likes с телом, а не /matching/setLike.
+    // TODO(bug): 400 при self-like отдаётся телом успеха {"match": false} — вернуть ProblemDetail.
+    // TODO(security): toUserId не проверяется на существование (FK нет by design) — лайк произвольного
+    //  UUID создаёт строку в likes, при взаимности — матч и MatchCreated в Kafka. Нужна проверка
+    //  существования профиля + блок-лист + суточная квота лайков (IP-лимита на gateway мало).
+    // TODO(bug): setMatch вызывается даже когда setLike вернул false (дубль лайка) — поведение
+    //  похоже на осознанную идемпотентность, но нигде не зафиксировано.
+    // TODO(debt): неиспользуемый import io.grpc.Status тянет gRPC-тип в web-слой модуля.
     @PostMapping("/setLike")
     public ResponseEntity<Map<String, Boolean>> setLike(@AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody NewLike newLike) {
         if(principal.userId().equals(newLike.toUserId())) { return ResponseEntity.status(400).body(Map.of("match", false));}

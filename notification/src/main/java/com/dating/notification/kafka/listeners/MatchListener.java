@@ -19,6 +19,12 @@ public class MatchListener {
         this.events = events;
     }
 
+    // TODO(bug): markIfNew вызывается ДО доставки — как только notifyMatch станет реальной отправкой,
+    //  её падение оставит событие помеченным, Kafka-ретрай уйдёт в ветку "дубль", уведомление
+    //  потеряется молча. Это не at-least-once + идемпотентность, а at-most-once. Порядок
+    //  "доставить -> пометить" (или общая транзакция) решить ДО перехода на RabbitMQ.
+    // TODO(bug): аргументы переставлены — notifyMatch(UUID userLow, UUID userHigh) вызывается как
+    //  notifyMatch(event.userHigh(), event.userLow()). Сейчас это только текст лога.
     @KafkaListener(topics = "user-matching-events")
     public void listen(MatchCreated event) {
         if(!events.markIfNew(event.eventId())) {

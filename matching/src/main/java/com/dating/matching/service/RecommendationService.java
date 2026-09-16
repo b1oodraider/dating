@@ -27,6 +27,12 @@ public class RecommendationService {
         this.rankings = rankings;
     }
 
+    // TODO(arch): hydration идёт N унарными gRPC (fetchCandidateProfiles), а готовый батч
+    //  batchFetchCandidateProfiles + MAX_BATCH_SIZE=100 в core не вызывается ниоткуда (мёртвый код).
+    //  topK=100 => 101 round-trip и 100 конкурентных запросов в пул Hikari на 10 соединений.
+    // TODO(arch): при недоступном core выдача — 200 с пустым списком (все StatusRuntimeException
+    //  проглочены). Клиент не отличит "кандидатов нет" от "core лёг". Выбрать и зафиксировать
+    //  поведение: best-effort уместен при отказе ЧАСТИ фан-аута, а не всех.
     public List<RecommendationDTO> recommend(UUID userId, int topK) {
         List<UUID> recommendedProfiles = selectCandidateIds(userId);
         List<ProfileMessage> profiles = fetcher.fetchCandidateProfiles(recommendedProfiles);
@@ -43,6 +49,11 @@ public class RecommendationService {
     }
 
     // TODO: реальная выборка кандидатов (Neo4j/фильтры) — вне первого спринта
+    // TODO(arch): планируемый FindCandidates(user_id, limit) без ORDER BY вернёт произвольный срез —
+    //  ranking будет ранжировать случайную выборку, а пользователь получать один и тот же набор.
+    //  Нужен детерминированный порядок + over-fetch (limit = topK * K) + курсор.
+    // TODO(arch): проверить NOT IN на ПУСТОМ exclude-списке (новый пользователь без лайков) —
+    //  это первый же реальный сценарий, а не край.
     public List<UUID> selectCandidateIds(UUID userId) {
         return List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
     }

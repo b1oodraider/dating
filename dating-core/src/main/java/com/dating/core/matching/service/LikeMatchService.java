@@ -50,6 +50,9 @@ public class LikeMatchService {
     //  без матча навсегда (следующего лайка не будет — unique). Починка: сверка при чтении
     //  или фоновая ре-проверка взаимных лайков без матча.
     @Transactional
+    // TODO(edge, дополнение): окно шире, чем кажется — повторный лайк по той же паре потерянный
+    //  матч НЕ чинит: setLike вернёт false из-за unique, а UI второй лайк не даст. Без фоновой
+    //  сверки взаимных лайков без матча состояние неисправимо.
     public boolean setMatch(UUID fromUserId, UUID toUserId) {
         // проверяем на наличие обратного лайка
         if (!likeRepository.existsByFromUserIdAndToUserId(toUserId, fromUserId)) {return false;}

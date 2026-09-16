@@ -1,3 +1,7 @@
+# TODO(arch): миграция приземлилась БЕЗ кода — нет ни сущности MatchPreferences, ни репозитория,
+#  ни эндпоинтов /api/matching/preferences (день +1, блок 1). В БД висит пустая таблица.
+# TODO: CHECK ck_match_preferences_age_range стоит на nullable-колонках: при частично заполненных
+#  prefs выражение даёт NULL и строка проходит. Если это осознанно — зафиксировать комментарием.
 databaseChangeLog:
   - changeSet:
       id: 005.1-create-match-preferences

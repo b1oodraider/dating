@@ -26,6 +26,14 @@ public class RecommendationController {
     //  UPDATE: сервис закрыт за gateway, осталось допилить jwt
     // TODO: валидация topK (отрицательное/огромное значение сейчас проходит молча;
     //  limit(-1) кинет IllegalArgumentException -> 500).
+    // TODO(security)(IDOR): userId из query не сверяется с JWT. Ловушка при "дешёвом" фиксе через
+    //  X-User-Id: gateway пробрасывает клиентские заголовки как есть, а getHeader() берёт ПЕРВОЕ
+    //  значение => сначала RemoveRequestHeader=X-User-Id на gateway, потом установка из
+    //  SecurityContext. Тест: токен A + userId/X-User-Id = B -> 403.
+    // TODO(arch): контроллер на WebFlux, но вся работа блокирующая и уехала на boundedElastic
+    //  с НЕОГРАНИЧЕННОЙ очередью: под нагрузкой gateway отдаёт 503 по TimeLimiter, а matching
+    //  продолжает копить запросы (метастабильный отказ). Либо MVC + spring.threads.virtual.enabled,
+    //  либо свой scheduler на виртуальных потоках + .timeout() на Mono.
     @GetMapping("/recommendations")
     public Mono<List<RecommendationDTO>> recommendations(@RequestParam UUID userId,
                                                          @RequestParam(defaultValue = "10") int topK) {
