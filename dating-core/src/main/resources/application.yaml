@@ -40,10 +40,7 @@ spring:
 
 app:
   jwt:
-    # TODO(security): дефолтный секрет как fallback — без переменной сервис молча поднимается
-    #  с публично известным ключом подписи HS256 (он же лежит в репозитории). Убрать :default,
-    #  чтобы старт падал. Это нужно ДО любого деплоя, отдельно от переноса секретов в env.
-    secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}
+    secret: ${JWT_SECRET}
     access-ttl-minutes: 15
     refresh-ttl-days: 30
 

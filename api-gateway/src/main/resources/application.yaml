@@ -96,5 +96,4 @@ management:
 #  работает благодаря relaxed binding, но стоит привести к одному виду.
 app:
   jwt:
-    # TODO(security): дефолтный секрет как fallback — см. такой же TODO в dating-core.
-    secret: ${JWT_SECRET:change-me-in-prod-use-at-least-32-bytes-secret-key}
+    secret: ${JWT_SECRET}

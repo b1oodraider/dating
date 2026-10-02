@@ -103,11 +103,8 @@ public class AuthService {
      *
      * @throws BadCredentialsException если токен неизвестен или недействителен
      */
-    @Transactional
-    // TODO(security)(bug): reuse-detection НЕ РАБОТАЕТ — метод @Transactional, массовый revoke идёт
-    //  через dirty checking, а следом летит BadCredentialsException (RuntimeException) => транзакция
-    //  откатывается и ни один токен не отзывается. Чинить: noRollbackFor или отзыв в REQUIRES_NEW
-    //  ДО throw. Проверять только интеграционным тестом — юнит с моками эту дыру не увидит.
+    @Transactional(noRollbackFor =  BadCredentialsException.class)
+    // noRollbackFor: при reuse-detection массовый отзыв должен закоммититься, хотя метод бросает 401
     public LoginResponse refresh(String refreshToken) {
         String hash = sha256(refreshToken);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
